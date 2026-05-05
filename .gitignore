@@ -1,0 +1,28 @@
+# Videos and images
+*.mp4
+*.MP4
+*.mjpg
+*.JPG
+*.jpg
+*.png
+
+# Model weights
+*.pt
+
+# Python virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Runs output (YOLO results)
+runs/
+
+# OS
+.DS_Store
+
+# Claude Code settings
+.claude/
+**/.claude/

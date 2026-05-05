@@ -1,0 +1,6 @@
+path: /Users/harleywelsh/Documents/surf_tracker/ultralytics_dataset
+train: images/train
+val: images/val
+
+names:
+  0: Surfer
