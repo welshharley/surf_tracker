@@ -1,13 +1,13 @@
 # Videos and images
-*.mp4
-*.MP4
+# *.mp4
+# *.MP4
 *.mjpg
 *.JPG
 *.jpg
 *.png
 
 # Model weights
-*.pt
+# *.pt
 
 # Python virtual environment
 venv/
