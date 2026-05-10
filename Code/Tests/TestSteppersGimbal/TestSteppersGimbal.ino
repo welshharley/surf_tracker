@@ -1,56 +1,32 @@
 #include <AccelStepper.h>
 
+// DRIVER mode: Step, Direction
 AccelStepper base(AccelStepper::DRIVER, 5, 4);
 AccelStepper hingeright(AccelStepper::DRIVER, 7, 6);
 AccelStepper hingeleft(AccelStepper::DRIVER, 9, 8);
 
-// --- Rotation limits (in steps) ---
-const long BASE_MIN  = -100;
-const long BASE_MAX  =  100;
-const long HINGE_MIN = -30;
-const long HINGE_MAX =  27;
-
 // Step size per key press
-const int STEP_SIZE = 1;
-
-// Tracked absolute positions
-long posBase  = 0;
-long posHinge = 0;  // hingeright and hingeleft mirror each other
+const int STEP_SIZE = 200;
 
 void setup()
 {
     Serial.begin(9600);
     Serial.println("Controls: W/S = hinge, A/D = base");
 
-    base.setMaxSpeed(1000.0);
-    base.setAcceleration(500.0);
+    base.setMaxSpeed(1600.0);
+    base.setAcceleration(1500.0);
 
-    hingeright.setMaxSpeed(1000.0);
-    hingeright.setAcceleration(500.0);
+    hingeright.setMaxSpeed(1600.0);
+    hingeright.setAcceleration(1500.0);
 
-    hingeleft.setMaxSpeed(1000.0);
-    hingeleft.setAcceleration(500.0);
-}
-
-long clamp(long value, long minVal, long maxVal) {
-    if (value < minVal) return minVal;
-    if (value > maxVal) return maxVal;
-    return value;
+    hingeleft.setMaxSpeed(1600.0);
+    hingeleft.setAcceleration(1500.0);
 }
 
 void move(long baseSteps, long hingeSteps) {
-    long newBase  = clamp(posBase  + baseSteps,  BASE_MIN,  BASE_MAX);
-    long newHinge = clamp(posHinge + hingeSteps, HINGE_MIN, HINGE_MAX);
-
-    long actualBaseSteps  = newBase  - posBase;
-    long actualHingeSteps = newHinge - posHinge;
-
-    posBase  = newBase;
-    posHinge = newHinge;
-
-    base.move(actualBaseSteps);
-    hingeright.move(actualHingeSteps);
-    hingeleft.move(-actualHingeSteps);
+    base.move(baseSteps);
+    hingeright.move(hingeSteps);
+    hingeleft.move(-hingeSteps);
 
     while (base.distanceToGo() != 0 || hingeright.distanceToGo() != 0 || hingeleft.distanceToGo() != 0) {
         base.run();
@@ -68,18 +44,12 @@ void handleSerial() {
             case 'a': case 'A': move(-STEP_SIZE, 0); break;  // base left
             case 'd': case 'D': move( STEP_SIZE, 0); break;  // base right
         }
-        Serial.print("Base: "); Serial.print(posBase);
-        Serial.print("  Hinge: "); Serial.println(posHinge);
+        Serial.print("Base: "); Serial.print(base.currentPosition());
+        Serial.print("  Hinge: "); Serial.println(hingeright.currentPosition());
     }
 }
 
 void loop()
 {
     handleSerial();
-    // move(0, 20);
-    // delay(500);
-    // move(10, -40);
-    // delay(500);
-    // move(-10, 20);
-    // delay(500);
 }
