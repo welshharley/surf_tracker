@@ -328,8 +328,8 @@ void loop() {
     packetCount++;
 
     SurferGNSSPacket pkt;
-    int rs = radio.readData((uint8_t*)&pkt, sizeof(pkt));
-    if (rs == RADIOLIB_ERR_NONE) {
+    int radioData = radio.readData((uint8_t*)&pkt, sizeof(pkt));
+    if (radioData == RADIOLIB_ERR_NONE) {
       double surferLat = pkt.lat_e7 / 1e7;
       double surferLon = pkt.lon_e7 / 1e7;
 
@@ -350,7 +350,7 @@ void loop() {
       showStatus(surferLat, surferLon, pkt.sats, radio.getRSSI(),
                  baseMotor.currentPosition(), hingeRightMotor.currentPosition());
     } else {
-      Serial.printf("{\"err\":\"readData %d\"}\n", rs);
+      Serial.printf("{\"err\":\"readData %d\"}\n", radioData);
     }
     radio.startReceive();
   }
