@@ -16,7 +16,7 @@
  */
 
 #include <RadioLib.h>
-#include <TinyGPSPlus.h>
+#include "HT_TinyGPS++.h"   // Heltec's bundled copy — DO NOT also include <TinyGPSPlus.h>
 #include <HardwareSerial.h>
 #include <AccelStepper.h>
 #include "HT_st7735.h"
@@ -50,10 +50,10 @@
 //   GND  → both Heltec GND and motor PSU GND (common ground)
 #define BASE_STEP   47
 #define BASE_DIR    48
-#define HR_STEP     20
-#define HR_DIR      19
-#define HL_STEP     18
-#define HL_DIR      17
+#define HR_STEP     19
+#define HR_DIR      20
+#define HL_STEP     17
+#define HL_DIR      18
 
 // ── Tuning ──────────────────────────────────────────────────────────────────
 #define GNSS_FIX_TIMEOUT_MS   60000
@@ -66,7 +66,7 @@
 // ── Globals ─────────────────────────────────────────────────────────────────
 SX1262 radio = new Module(LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
 HT_st7735 display;
-TinyGPSPlus gps;
+TinyGPSPlus gps; // this librayr is included and bundled with ht_tinygps (as aposed to just having the tinygps header)
 HardwareSerial GPSSerial(1);
 
 AccelStepper baseMotor      (AccelStepper::DRIVER, BASE_STEP, BASE_DIR);
