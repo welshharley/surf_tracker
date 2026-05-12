@@ -100,6 +100,7 @@ def main():
                 else:
                     # Heartbeat, ack, status, error, or garbage - print as-is
                     print(f"[{ts}] RX: {pretty(line)}")
+                    print("Nothing coming through")
 
             # Non-blocking check for typed input
             if select.select([sys.stdin], [], [], 0.1)[0]:
