@@ -11,6 +11,7 @@ from typing import Optional
 
 
 def extract_positions(line: str) -> Optional[dict]:
+    print("iN EXTRACTION FUNCTION")
     """Parse one JSON line from the Heltec and pull out surfer + camera positions.
 
     Returns a dict with keys:
