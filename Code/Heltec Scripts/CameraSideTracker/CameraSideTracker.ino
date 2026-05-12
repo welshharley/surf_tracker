@@ -280,8 +280,11 @@ void setup() {
   digitalWrite(GNSS_RST, HIGH); delay(100);
   GPSSerial.begin(115200, SERIAL_8N1, GNSS_RX, GNSS_TX);
   acquireCameraPosition();
+  while (cameraPos.valid == false){
+    acquireCameraPosition();
+  }
   GPSSerial.end();
-  digitalWrite(GNSS_RST, LOW);
+  // digitalWrite(GNSS_RST, LOW);
 
   // Inter-core queue + motor task on Core 0
   // (Arduino loop() runs on Core 1 by default, so motorTask on Core 0 means
