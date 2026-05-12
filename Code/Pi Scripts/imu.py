@@ -44,7 +44,7 @@ DEFAULT_LOCATION    = "Sydney"
 def connect_imu():
     try:
         i2c = busio.I2C(board.SCL, board.SDA)
-        return adafruit_bno055.BNO055_I2C(i2c)
+        return adafruit_bno055.BNO055_I2C(i2c, address=0x29)
     except Exception as e:
         sys.exit(
             f"Could not connect to BNO055: {e}\n"

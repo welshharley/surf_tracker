@@ -1,0 +1,19 @@
+{
+  "accel_offset": [
+    131,
+    -138,
+    145
+  ],
+  "mag_offset": [
+    152,
+    352,
+    -8
+  ],
+  "gyro_offset": [
+    -2,
+    -1,
+    1
+  ],
+  "accel_radius": 1000,
+  "mag_radius": 664
+}

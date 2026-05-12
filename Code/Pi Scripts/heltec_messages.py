@@ -39,13 +39,16 @@ def extract_positions(line: str) -> Optional[dict]:
     try:
         msg = json.loads(line)
     except (json.JSONDecodeError, TypeError):
+        print("JSON decoder error")
         return None
 
     surfer = msg.get("surfer")
     camera = msg.get("camera")
     if not isinstance(surfer, dict) or not isinstance(camera, dict):
+        print("no instances")
         return None
     if not camera.get("valid"):
+        print("camera get was not valid")
         return None
 
     link = msg.get("link") or {}
