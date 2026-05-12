@@ -90,11 +90,11 @@ def main():
 
                 pos = extract_positions(line)
                 if pos:
-                    s, c = pos['surfer'], pos['camera']
+                    surfer, camera = pos['surfer'], pos['camera']
                     print(
                         f"[{ts}] POS  "
-                        f"surfer=({s['lat']:.6f},{s['lon']:.6f}) "
-                        f"camera=({c['lat']:.6f},{c['lon']:.6f}) "
+                        f"surfer=({surfer['lat']:.6f},{surfer['lon']:.6f}) "
+                        f"camera=({camera['lat']:.6f},{camera['lon']:.6f}) "
                         f"rssi={pos['rssi_dbm']:.0f}dBm  snr={pos['snr_db']:.1f}dB"
                     )
                 else:
