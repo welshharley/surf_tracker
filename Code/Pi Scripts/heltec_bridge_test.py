@@ -24,6 +24,7 @@ import serial
 import sys
 import threading
 import time
+import math
 from datetime import datetime
 
 from heltec_messages import extract_positions
@@ -66,6 +67,34 @@ def pretty(line):
         return json.dumps(json.loads(line), separators=(',', ':'))
     except json.JSONDecodeError:
         return line
+    
+
+def distance_camera_to_surfer_haversine(camera_lat, camera_lon, surfer_lat, surfer_lon):
+    earths_radius = 6371000.0 # in meters, may have to change?
+    camera_lat, camera_lon, surfer_lat, surfer_lon = map(math.radians, [camera_lat, camera_lon, surfer_lat, surfer_lon])
+
+    latitude_difference = camera_lat - surfer_lat
+    longitude_difference = camera_lon - surfer_lon
+
+    a = math.sin(latitude_difference / 2)**2 + math.cos(camera_lat) * math.cos(surfer_lat) * math.sin(longitude_difference / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = earths_radius * c
+
+    return distance
+
+def bearing_camera_to_surfer(camera_lat, camera_lon, surfer_lat, surfer_lon):
+    """Initial great-circle bearing from camera to surfer, in degrees (0 = N, 90 = E)."""
+    # Convert everything to radians for the trig
+    phi1 = math.radians(camera_lat)   # start latitude
+    phi2 = math.radians(surfer_lat)   # end latitude
+    delta_lambda = math.radians(surfer_lon - camera_lon)  # longitude difference
+
+    y = math.sin(delta_lambda) * math.cos(phi2)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
+
+    theta = math.atan2(y, x)                       # radians, -pi to +pi
+    return (math.degrees(theta) + 360) % 360       # compass bearing, 0 to 360
+
 
 
 def main():
@@ -88,19 +117,24 @@ def main():
                 rx += 1
                 ts = f"{datetime.now():%H:%M:%S}"
 
-                pos = extract_positions(line)
-                if pos:
-                    surfer, camera = pos['surfer'], pos['camera']
+                positions = extract_positions(line)
+                if positions:
+                    surfer, camera = positions['surfer'], positions['camera']
+                    camera_lat, camera_lon, surfer_la, surfer_lon = camera['lat'], camera['lon'], surfer['lat'], surfer['lon']
+
+
                     print(
                         f"[{ts}] POS  "
                         f"surfer=({surfer['lat']:.6f},{surfer['lon']:.6f}) "
                         f"camera=({camera['lat']:.6f},{camera['lon']:.6f}) "
-                        f"rssi={pos['rssi_dbm']:.0f}dBm  snr={pos['snr_db']:.1f}dB"
+                        f"rssi={positions['rssi_dbm']:.0f}dBm  snr={positions['snr_db']:.1f}dB"
                     )
                 else:
                     # Heartbeat, ack, status, error, or garbage - print as-is
                     print(f"[{ts}] RX: {pretty(line)}")
                     print("Nothing coming through")
+            
+            
 
             # Non-blocking check for typed input
             if select.select([sys.stdin], [], [], 0.1)[0]:
