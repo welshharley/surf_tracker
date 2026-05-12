@@ -26,6 +26,8 @@ import threading
 import time
 from datetime import datetime
 
+from heltec_messages import extract_positions
+
 
 def find_port():
     """Look in the usual places on Linux/Pi and macOS."""
@@ -84,7 +86,20 @@ def main():
             while not incoming.empty():
                 line = incoming.get()
                 rx += 1
-                print(f"[{datetime.now():%H:%M:%S}] RX: {pretty(line)}")
+                ts = f"{datetime.now():%H:%M:%S}"
+
+                pos = extract_positions(line)
+                if pos:
+                    s, c = pos['surfer'], pos['camera']
+                    print(
+                        f"[{ts}] POS  "
+                        f"surfer=({s['lat']:.6f},{s['lon']:.6f}) "
+                        f"camera=({c['lat']:.6f},{c['lon']:.6f}) "
+                        f"rssi={pos['rssi_dbm']:.0f}dBm  snr={pos['snr_db']:.1f}dB"
+                    )
+                else:
+                    # Heartbeat, ack, status, error, or garbage - print as-is
+                    print(f"[{ts}] RX: {pretty(line)}")
 
             # Non-blocking check for typed input
             if select.select([sys.stdin], [], [], 0.1)[0]:
