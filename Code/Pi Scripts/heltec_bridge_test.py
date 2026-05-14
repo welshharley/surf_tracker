@@ -96,6 +96,34 @@ def bearing_camera_to_surfer(camera_lat, camera_lon, surfer_lat, surfer_lon):
     return (math.degrees(theta) + 360) % 360       # compass bearing, 0 to 360
 
 
+# ── Base motor configuration ────────────────────────────────────────────────
+# 200 full steps/rev × 16 microsteps ÷ 360° = 8.888 steps per degree (direct drive).
+# If you add a gear/belt reduction later, multiply by that ratio.
+STEPS_PER_DEG_BASE = (200 * 16) / 360.0
+
+# Don't send a motor command for tiny bearing changes - GPS noise alone causes
+# bearing wobble when surfer is close, and we'd just be twitching the motor.
+MIN_MOVE_DEG = 0.1
+
+
+def send_base_to_bearing(ser, target_deg, current_deg):
+    """Send a relative 'M <base_steps> 0' command to move the base toward target_deg.
+
+    target_deg     - world bearing we want the camera pointing at (0 = N)
+    current_deg    - where we believe the camera is currently pointing
+    Returns        - the new current_deg after the move (or unchanged if skipped)
+    """
+    # Shortest-path delta, normalised to -180 .. +180
+    delta_deg = (target_deg - current_deg + 540) % 360 - 180
+
+    if abs(delta_deg) < MIN_MOVE_DEG:
+        return current_deg            # too small to bother
+
+    delta_steps = int(round(delta_deg * STEPS_PER_DEG_BASE))
+    ser.write(f"M {delta_steps} 0\n".encode())
+    print(f"   -> M {delta_steps} 0   (delta={delta_deg:+.1f}°)")
+    return target_deg                  # we believe we're now at target
+
 
 def main():
     port = sys.argv[1] if len(sys.argv) > 1 else find_port()
@@ -107,6 +135,12 @@ def main():
 
     incoming = queue.Queue()
     threading.Thread(target=reader_thread, args=(ser, incoming), daemon=True).start()
+
+    # Assume the camera starts facing true north (0°). Until the magnetometer
+    # is wired in, this is just a starting reference - every M command we send
+    # is relative, and we track our believed heading here so the next bearing
+    # delta is correct.
+    current_base_deg = 0.0
 
     rx = tx = 0
     try:
@@ -120,15 +154,24 @@ def main():
                 positions = extract_positions(line)
                 if positions:
                     surfer, camera = positions['surfer'], positions['camera']
-                    camera_lat, camera_lon, surfer_la, surfer_lon = camera['lat'], camera['lon'], surfer['lat'], surfer['lon']
+                    camera_lat, camera_lon, surfer_lat, surfer_lon = camera['lat'], camera['lon'], surfer['lat'], surfer['lon']
 
+                    bearing_to_surfer = bearing_camera_to_surfer(camera_lat, camera_lon, surfer_lat, surfer_lon)
 
                     print(
                         f"[{ts}] POS  "
                         f"surfer=({surfer['lat']:.6f},{surfer['lon']:.6f}) "
                         f"camera=({camera['lat']:.6f},{camera['lon']:.6f}) "
-                        f"rssi={positions['rssi_dbm']:.0f}dBm  snr={positions['snr_db']:.1f}dB"
+                        f"rssi={positions['rssi_dbm']:.0f}dBm  snr={positions['snr_db']:.1f}dB  "
+                        f"bearing={bearing_to_surfer:.1f}°  base={current_base_deg:.1f}°"
                     )
+
+                    # Move the base toward the surfer's bearing. Returns the
+                    # updated heading so we don't double-count on the next tick.
+                    current_base_deg = send_base_to_bearing(
+                        ser, bearing_to_surfer, current_base_deg
+                    )
+                    tx += 1
                 else:
                     # Heartbeat, ack, status, error, or garbage - print as-is
                     print(f"[{ts}] RX: {pretty(line)}")
