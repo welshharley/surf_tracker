@@ -26,8 +26,13 @@ import threading
 import time
 import math
 from datetime import datetime
+from pathlib import Path
 
 from heltec_messages import extract_positions
+
+# imu.py lives in a sibling folder — add it to the import path
+sys.path.insert(0, str(Path(__file__).parent / "Sensor Testing"))
+from imu import IMU
 
 
 def find_port():
@@ -136,11 +141,15 @@ def main():
     incoming = queue.Queue()
     threading.Thread(target=reader_thread, args=(ser, incoming), daemon=True).start()
 
-    # Assume the camera starts facing true north (0°). Until the magnetometer
-    # is wired in, this is just a starting reference - every M command we send
-    # is relative, and we track our believed heading here so the next bearing
-    # delta is correct.
-    current_base_deg = 0.0
+    # Connect to the BNO055. Loads saved calibration + mounting offset + declination
+    # automatically. If the IMU isn't wired in yet, comment this out and set
+    # current_base_deg = 0.0 manually.
+    imu = IMU()
+    print("IMU connected. Waiting for first valid heading...")
+    while imu.heading() is None:
+        time.sleep(0.1)
+    current_base_deg = imu.heading()
+    print(f"Initial camera heading: {current_base_deg:.1f}°")
 
     rx = tx = 0
     try:
@@ -158,19 +167,21 @@ def main():
 
                     bearing_to_surfer = bearing_camera_to_surfer(camera_lat, camera_lon, surfer_lat, surfer_lon)
 
+                    # Where is the camera ACTUALLY pointing right now? Ask the IMU.
+                    # Falls back to last-known heading if the IMU is briefly invalid.
+                    measured = imu.heading()
+                    if measured is not None:
+                        current_base_deg = measured
+
                     print(
                         f"[{ts}] POS  "
                         f"surfer=({surfer['lat']:.6f},{surfer['lon']:.6f}) "
                         f"camera=({camera['lat']:.6f},{camera['lon']:.6f}) "
                         f"rssi={positions['rssi_dbm']:.0f}dBm  snr={positions['snr_db']:.1f}dB  "
-                        f"bearing={bearing_to_surfer:.1f}°  base={current_base_deg:.1f}°"
+                        f"bearing={bearing_to_surfer:.1f}°  imu={current_base_deg:.1f}°"
                     )
 
-                    # Move the base toward the surfer's bearing. Returns the
-                    # updated heading so we don't double-count on the next tick.
-                    current_base_deg = send_base_to_bearing(
-                        ser, bearing_to_surfer, current_base_deg
-                    )
+                    send_base_to_bearing(ser, bearing_to_surfer, current_base_deg)
                     tx += 1
                 else:
                     # Heartbeat, ack, status, error, or garbage - print as-is
