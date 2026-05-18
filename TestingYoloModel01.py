@@ -15,4 +15,4 @@ VIDEO_PATH = "TestVid04.mp4"
 #results[0].show()
 
 
-results = model.predict(source="TestVid06.MP4", conf=0.4, device="mps", show=True, save=True)
+results = model.predict(source="TestVid04.MP4", conf=0.3, device="mps", show=True, save=True)

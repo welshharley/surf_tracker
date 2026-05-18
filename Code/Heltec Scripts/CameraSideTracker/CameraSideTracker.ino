@@ -48,7 +48,7 @@
 //   M0=GND, M1=GND, M2=3.3V    (1/16 microstep)
 //   VMOT → motor PSU (12 V), with 100 µF cap across VMOT/GND
 //   GND  → both Heltec GND and motor PSU GND (common ground)
-#define BASE_STEP   47
+#define BASE_STEP   21
 #define BASE_DIR    48
 #define HR_STEP     19
 #define HR_DIR      20
